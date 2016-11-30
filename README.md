@@ -15,7 +15,7 @@
 
 ## Requirements
 
-- iOS 9.0+ / macOS 10.10+
+- iOS 9.0+ / macOS 10.12+
 - Xcode 8.1+
 - Swift 3.0+
 

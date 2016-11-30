@@ -6,9 +6,9 @@ Pod::Spec.new do |s|
   s.homepage     = "https://github.com/vasilenkoigor/BiometricAuth"
   s.license      = { :type => "MIT", :file => "LICENSE" }
   s.author             = { "Igor Vasilenko" => "spb.vasilenko@icloud.com" }
-  s.ios.deployment_target = "9.0"
-  s.osx.deployment_target = "10.9"
+  s.ios.deployment_target = "9.3"
+  s.osx.deployment_target = "10.12"
   s.source       = { :git => "https://github.com/vasilenkoigor/BiometricAuth.git", :tag => s.version.to_s }
   s.source_files  = "Sources/**/*"
-  s.frameworks  = 'Foundation', 'UIKit', 'LocalAuthentication'
+  s.frameworks  = 'Foundation', 'LocalAuthentication'
 end
