@@ -22,7 +22,6 @@
  *  SOFTWARE.
  */
 
-import Foundation
 import LocalAuthentication
 
 extension Dictionary {
