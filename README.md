@@ -1,5 +1,12 @@
 [![Carthage Compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage) ![Swift 3.0.x](https://img.shields.io/badge/Swift-3.0.x-orange.svg) ![platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20OS-lightgrey.svg) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/vasilenkoigor/BiometricAuth/master/LICENSE)
 
+- [Features](#features)
+- [Requirements](#requirements)
+- [Communication](#communication)
+- [Installation](#installation)
+- [Usage](#usage)
+- [License](#license)
+
 ## Features
 
 - [x] Force failure authentication if was added new fingerprint to device. This feature for security considerations.
@@ -65,3 +72,8 @@ github "vasilenkoigor/BiometricAuth"
 Run `carthage update` to build the framework and drag the built `BiometricAuth.framework` into your Xcode project.
 
 ## Usage
+
+
+## License
+
+BiometricAuth is released under the MIT license. See LICENSE for details.
