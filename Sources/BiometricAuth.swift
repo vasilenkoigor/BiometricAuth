@@ -23,7 +23,6 @@
  */
 
 import Foundation
-import UIKit
 import LocalAuthentication
 
 extension Dictionary {
@@ -141,29 +140,39 @@ class BiometricAuth {
     
     fileprivate var isAuthenticationByBiometricAvailable: Bool {
         get {
-            return self.authenticationContext.canEvaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics, error: nil)
+            if #available(OSXApplicationExtension 10.12, *) {
+                return self.authenticationContext.canEvaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics, error: nil)
+            } else {
+                return false
+            }
         }
     }
     
     fileprivate func evaluateAuthentication(withReason reason: String, success: BiometricAuthenticationServiceSuccessBlock?, failure: BiometricAuthenticationServiceFailureBlock?) {
-        self.authenticationContext.evaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics,
-                                                  localizedReason: reason,
-                                                  reply: { (result, error) in
-                                                    DispatchQueue.main.async {
-                                                        if (result) {
-                                                            if let success = success {
-                                                                success()
-                                                            }
-                                                        } else {
-                                                            if let failure = failure {
-                                                                let authError = NSError(domain: "BiometricAuthenticationServiceError",
-                                                                                        code: -1,
-                                                                                        userInfo: [NSLocalizedDescriptionKey : error!.localizedDescription])
-                                                                failure(authError)
+        if #available(OSXApplicationExtension 10.12, *) {
+            self.authenticationContext.evaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics,
+                                                      localizedReason: reason,
+                                                      reply: { (result, error) in
+                                                        DispatchQueue.main.async {
+                                                            if (result) {
+                                                                if let success = success {
+                                                                    success()
+                                                                }
+                                                            } else {
+                                                                if let failure = failure {
+                                                                    let authError = NSError(domain: "BiometricAuthenticationServiceError",
+                                                                                            code: -1,
+                                                                                            userInfo: [NSLocalizedDescriptionKey : error!.localizedDescription])
+                                                                    failure(authError)
+                                                                }
                                                             }
                                                         }
-                                                    }
-        })
+            })
+        } else {
+            if let failure = failure {
+                failure(self.authenticationUnavailabilityError)
+            }
+        }
     }
     
     // MARK: Storage
