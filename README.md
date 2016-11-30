@@ -2,6 +2,10 @@
 
 ## Features
 
+- [x] Force failure authentication if was added new fingerprint to device. This feature ащк security considerations.
+- [x] Authentication allowable reuse duration
+
+
 
 ## Requirements
 
