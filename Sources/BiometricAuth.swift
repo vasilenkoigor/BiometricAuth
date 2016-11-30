@@ -32,23 +32,21 @@ extension Dictionary {
     }
 }
 
-typealias BiometricAuthenticationServiceSuccessBlock = () -> ()
-typealias BiometricAuthenticationServiceFailureBlock = (NSError?) -> ()
+public enum BiometricAuthError : Error {
+    case evaluateAuthenticationError(String)
+    case authenticationNotAvailable(String)
+    case domainStateChanged
+}
 
-class BiometricAuth {
+@available(iOSApplicationExtension 9.0, *)
+@available(OSXApplicationExtension 10.12, *)
+public class BiometricAuth {
     
-    public var isAuthenticationAvailable: Bool {
-        get {
-            return self.isAuthenticationByBiometricAvailable
-        }
-    }
+    public let authenticationContext = LAContext()
+    public var forceThrowsOnChangedDomainState : Bool = true
     
     fileprivate let serviceFeaturesKey = "BiometricAuthFeatures"
-    fileprivate let authenticationContext = LAContext()
-    fileprivate lazy var authenticationUnavailabilityError: NSError = {
-        let error = NSError(domain: "BiometricAuthError", code: -1, userInfo: [NSLocalizedDescriptionKey : "Biometric authentication is not available"])
-        return error
-    }()
+    fileprivate let oldDomainStateDefaultsKey = "BiometricAuthOldDomainStateDefaultsKey"
     
     public func isAuthenticationAvailable(forFeature feature: String) -> Bool {
         if let featuresStorage: Dictionary<String, Bool> = UserDefaults.standard.value(forKey: self.serviceFeaturesKey) as! Dictionary<String, Bool>? {
@@ -58,125 +56,88 @@ class BiometricAuth {
         }
     }
     
-    public func enableAuthentication(forFeature feature: String,
-                                     success: BiometricAuthenticationServiceSuccessBlock?,
-                                     failure: BiometricAuthenticationServiceFailureBlock?) {
-        DispatchQueue.main.async {
-            guard self.isAuthenticationAvailable else {
-                if let failure = failure {
-                    failure(self.authenticationUnavailabilityError)
-                }
-                return
-            }
-            
-            if (self.isAuthenticationAvailable(forFeature: feature)) {
-                if let success = success {
-                    success()
-                }
-            } else {
-                self.save(feature: feature, enable: true)
-                if let success = success {
-                    success()
-                }
-            }
+    public func enableAuthentication(forFeature feature: String) throws -> Bool {
+        
+        guard try self.isAuthenticationByBiometricAvailable() else {
+            return false
         }
+        
+        guard self.isAuthenticationAvailable(forFeature: feature) else {
+            self.save(feature: feature, enable: true)
+            return true
+        }
+        
+        return true
     }
     
-    public func disableAuthentication(forFeature feature: String,
-                                      reason: String,
-                                      success: BiometricAuthenticationServiceSuccessBlock?,
-                                      failure: BiometricAuthenticationServiceFailureBlock?) {
-        DispatchQueue.main.async {
-            guard self.isAuthenticationAvailable else {
-                if let failure = failure {
-                    failure(self.authenticationUnavailabilityError)
-                }
-                return
-            }
-            
-            if (self.isAuthenticationAvailable(forFeature: feature)) {
-                self.evaluateAuthentication(withReason: reason,
-                                            success: {
-                                                self.save(feature: feature, enable: false)
-                                                if let success = success {
-                                                    success()
-                                                }
-                },
-                                            failure: failure)
-            } else {
-                if let success = success {
-                    success()
-                }
-            }
+    func disableAuthentication(forFeature feature: String, reason: String) throws -> Bool {
+        
+        guard try self.isAuthenticationByBiometricAvailable() else {
+            return false
         }
-    }
-    
-    public func requestAuthentication(forFeature feature: String,
-                                      reason: String,
-                                      success: BiometricAuthenticationServiceSuccessBlock?,
-                                      failure: BiometricAuthenticationServiceFailureBlock?) {
-        DispatchQueue.main.async {
-            guard self.isAuthenticationAvailable else {
-                if let failure = failure {
-                    failure(self.authenticationUnavailabilityError)
-                }
-                return
-            }
-            
-            if (self.isAuthenticationAvailable(forFeature: feature)) {
-                self.evaluateAuthentication(withReason: reason,
-                                            success: success,
-                                            failure: failure)
-            } else {
-                if let success = success {
-                    success()
-                }
-            }
-        }
-    }
-    
-    // MARK: Biometrics
-    
-    fileprivate var isAuthenticationByBiometricAvailable: Bool {
-        get {
-            if #available(OSXApplicationExtension 10.12, *) {
-                return self.authenticationContext.canEvaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics, error: nil)
+        
+        guard !self.isAuthenticationAvailable(forFeature: feature) else {
+            if try self.evaluateAuthentication(withReason: reason) {
+                self.save(feature: feature, enable: false)
+                return true
             } else {
                 return false
             }
         }
+        
+        return true
     }
     
-    fileprivate func evaluateAuthentication(withReason reason: String, success: BiometricAuthenticationServiceSuccessBlock?, failure: BiometricAuthenticationServiceFailureBlock?) {
-        if #available(OSXApplicationExtension 10.12, *) {
-            self.authenticationContext.evaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics,
-                                                      localizedReason: reason,
-                                                      reply: { (result, error) in
-                                                        DispatchQueue.main.async {
-                                                            if (result) {
-                                                                if let success = success {
-                                                                    success()
-                                                                }
-                                                            } else {
-                                                                if let failure = failure {
-                                                                    let authError = NSError(domain: "BiometricAuthenticationServiceError",
-                                                                                            code: -1,
-                                                                                            userInfo: [NSLocalizedDescriptionKey : error!.localizedDescription])
-                                                                    failure(authError)
-                                                                }
-                                                            }
-                                                        }
-            })
-        } else {
-            if let failure = failure {
-                failure(self.authenticationUnavailabilityError)
-            }
+    func requestAuthentication(forFeature feature: String, reason: String) throws -> Bool {
+        
+        guard try self.isAuthenticationByBiometricAvailable() else {
+            return false
         }
+        
+        if (self.isAuthenticationAvailable(forFeature: feature)) {
+            return try self.evaluateAuthentication(withReason: reason)
+        } else {
+            return false
+        }
+    }
+    
+    // MARK: Biometrics
+    fileprivate func isAuthenticationByBiometricAvailable() throws -> Bool {
+        
+        let result = self.authenticationContext.canEvaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics, error: nil)
+        
+        if let oldDomainState : Data = UserDefaults.standard.value(forKey: self.oldDomainStateDefaultsKey) as! Data? {
+            if let domainState = self.authenticationContext.evaluatedPolicyDomainState, domainState != oldDomainState  {
+                UserDefaults.standard.set(nil, forKey: self.oldDomainStateDefaultsKey)
+                throw BiometricAuthError.domainStateChanged
+            }
+        } else {
+            UserDefaults.standard.set(self.authenticationContext.evaluatedPolicyDomainState, forKey: self.oldDomainStateDefaultsKey)
+        }
+        
+        return result
+    }
+    
+    fileprivate func evaluateAuthentication(withReason reason: String) throws -> Bool {
+        
+        var success : Bool = false
+        var evaluateError : Error?
+        self.authenticationContext.evaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics,
+                                                  localizedReason: reason,
+                                                  reply: { (result, error) in
+                                                    success = result
+                                                    evaluateError = error })
+        if let evaluateError = evaluateError {
+            throw BiometricAuthError.evaluateAuthenticationError(evaluateError.localizedDescription)
+        }
+        
+        return success
     }
     
     // MARK: Storage
     
     fileprivate func save(feature: String, enable: Bool) {
+        
         let userDefaults = UserDefaults.standard
         var featuresStorage = Dictionary<String, Bool>()
         if let currentStorage: Dictionary<String, Bool> = userDefaults.value(forKey: self.serviceFeaturesKey) as! Dictionary<String, Bool>? {
