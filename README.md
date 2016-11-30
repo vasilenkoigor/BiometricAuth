@@ -2,7 +2,7 @@
 
 ## Features
 
-- [x] Force failure authentication if was added new fingerprint to device. This feature ащк security considerations.
+- [x] Force failure authentication if was added new fingerprint to device. This feature for security considerations.
 - [x] Authentication allowable reuse duration
 - [x] Saving features list that's needs authentication via TouchID
 
