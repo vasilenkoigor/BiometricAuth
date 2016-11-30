@@ -8,7 +8,7 @@
 
 ## Requirements
 
-- iOS 8.0+ / macOS 10.10+
+- iOS 9.0+ / macOS 10.10+
 - Xcode 8.1+
 - Swift 3.0+
 
@@ -31,7 +31,6 @@ $ gem install cocoapods
 To integrate BiometricAuth into your Xcode project using CocoaPods, specify it in your `Podfile`:
 
 ```ruby
-source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '9.0'
 use_frameworks!
 
