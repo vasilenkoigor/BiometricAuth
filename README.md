@@ -80,13 +80,13 @@ Run `carthage update` to build the framework and drag the built `BiometricAuth.f
 
 In security cosiderations strongly recommented enable `forceThrowsOnChangedDomainState`
 ```swift
-let biometricAuth = BiometricAuth(forceThrowsOnChangedDomainState: true)
+        let biometricAuth = BiometricAuth(forceThrowsOnChangedDomainState: true)
 ```
 
 ### Biometric authentication availability
 
 ```swift
-do {
+        do {
             try self.biometricAuth.isAvailable()
         } catch let error as BiometricAuthError {
             print(error.localizedDescription)
@@ -98,7 +98,8 @@ do {
 ### Feature enabled/disabled for biometric authentication
 
 ```swift
-let feature = "Passcode Screen Auth"
+        let feature = "Passcode Screen Auth"
+        
         do {
             try self.biometricAuth.enableAuthentication(forFeature: feature)
         } catch let error as BiometricAuthError {
@@ -111,7 +112,8 @@ let feature = "Passcode Screen Auth"
 ### Authenticating
 
 ```swift
-var success = false
+        var success = false
+        
         do {
             success = try self.biometricAuth.requestAuthentication(forFeature: feature, reason: "For authentication")
         } catch let error as BiometricAuthError {
