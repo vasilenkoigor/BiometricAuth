@@ -5,8 +5,9 @@
 - [Communication](#communication)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Intro](#intro)
     - [Biometric authentication availability](#biometric-authentication-availability)
-	- [Feature enabled/disabled for biometric authentication](#feature-availability-for-biometric-authentication)
+    - [Feature enabled/disabled for biometric authentication](#feature-availability-for-biometric-authentication)
     - [Authenticating](#authenticating)
 - [License](#license)
 
@@ -75,6 +76,54 @@ Run `carthage update` to build the framework and drag the built `BiometricAuth.f
 
 ## Usage
 
+### Intro
+
+In security cosiderations strongly recommented enable `forceThrowsOnChangedDomainState`
+```swift
+let biometricAuth = BiometricAuth(forceThrowsOnChangedDomainState: true)
+```
+
+### Biometric authentication availability
+
+```swift
+do {
+            try self.biometricAuth.isAvailable()
+        } catch let error as BiometricAuthError {
+            print(error.localizedDescription)
+        } catch {
+            print("Something went wrong")
+        }
+```
+
+### Feature enabled/disabled for biometric authentication
+
+```swift
+let feature = "Passcode Screen Auth"
+        do {
+            try self.biometricAuth.enableAuthentication(forFeature: feature)
+        } catch let error as BiometricAuthError {
+            print(error.localizedDescription)
+        } catch {
+            print("Something went wrong")
+        }
+```
+
+### Authenticating
+
+```swift
+var success = false
+        do {
+            success = try self.biometricAuth.requestAuthentication(forFeature: feature, reason: "For authentication")
+        } catch let error as BiometricAuthError {
+            print(error.localizedDescription)
+        } catch {
+            print("Something went wrong")
+        }
+        
+        if success {
+            print("Success biometric authentication")
+        }
+```
 
 ## License
 
