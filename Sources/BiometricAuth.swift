@@ -49,6 +49,7 @@ public class BiometricAuth {
     fileprivate let oldDomainStateDefaultsKey = "BiometricAuthOldDomainStateDefaultsKey"
     
     public func isAuthenticationAvailable(forFeature feature: String) -> Bool {
+        
         if let featuresStorage: Dictionary<String, Bool> = UserDefaults.standard.value(forKey: self.serviceFeaturesKey) as! Dictionary<String, Bool>? {
             return featuresStorage[feature]!
         } else {
@@ -62,11 +63,7 @@ public class BiometricAuth {
             return false
         }
         
-        guard self.isAuthenticationAvailable(forFeature: feature) else {
-            self.save(feature: feature, enable: true)
-            return true
-        }
-        
+        self.save(feature: feature, enable: true)
         return true
     }
     
@@ -76,16 +73,12 @@ public class BiometricAuth {
             return false
         }
         
-        guard !self.isAuthenticationAvailable(forFeature: feature) else {
-            if try self.evaluateAuthentication(withReason: reason) {
-                self.save(feature: feature, enable: false)
-                return true
-            } else {
-                return false
-            }
+        if try self.evaluateAuthentication(withReason: reason) {
+            self.save(feature: feature, enable: false)
+            return true
+        } else {
+            return false
         }
-        
-        return true
     }
     
     func requestAuthentication(forFeature feature: String, reason: String) throws -> Bool {
@@ -109,7 +102,9 @@ public class BiometricAuth {
         if let oldDomainState : Data = UserDefaults.standard.value(forKey: self.oldDomainStateDefaultsKey) as! Data? {
             if let domainState = self.authenticationContext.evaluatedPolicyDomainState, domainState != oldDomainState  {
                 UserDefaults.standard.set(nil, forKey: self.oldDomainStateDefaultsKey)
-                throw BiometricAuthError.domainStateChanged
+                if self.forceThrowsOnChangedDomainState {
+                    throw BiometricAuthError.domainStateChanged
+                }
             }
         } else {
             UserDefaults.standard.set(self.authenticationContext.evaluatedPolicyDomainState, forKey: self.oldDomainStateDefaultsKey)
