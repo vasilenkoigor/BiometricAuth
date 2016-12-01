@@ -5,6 +5,9 @@
 - [Communication](#communication)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Biometric authentication availability](#biometric-authentication-availability)
+	- [Feature enabled/disabled for biometric authentication](#feature-availability-for-biometric-authentication)
+    - [Authenticating](#authenticating)
 - [License](#license)
 
 ## Features
