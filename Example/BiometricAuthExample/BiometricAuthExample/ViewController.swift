@@ -25,18 +25,11 @@ class ViewController: UIViewController {
             print("Something went wrong")
         }
         
-        var success = false
-        do {
-            success = try self.biometricAuth.requestAuthentication(forFeature: feature, reason: "For authentication")
-        } catch let error as BiometricAuthError {
-            print(error.localizedDescription)
-        } catch {
-            print("Something went wrong")
-        }
-        
-        if success {
-            print("Success biometric authentication")
-        }
+        self.biometricAuth.requestAuthentication(forFeature: feature, reason: "Reason", completion: { (result, error) in
+            if result {
+                print("Success")
+            }
+        })
     }
 }
 

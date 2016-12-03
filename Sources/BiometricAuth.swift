@@ -38,6 +38,8 @@ public enum BiometricAuthError : Error {
     case domainStateChanged
 }
 
+public typealias BiometricAuthCompletion = (Bool, Error?) -> Void
+
 @available(iOSApplicationExtension 9.0, *)
 @available(OSXApplicationExtension 10.12, *)
 public class BiometricAuth {
@@ -89,47 +91,59 @@ public class BiometricAuth {
         return true
     }
     
-    public func disableAuthentication(forFeature feature: String, reason: String) throws -> Bool {
+    public func disableAuthentication(forFeature feature: String, reason: String, completion: @escaping BiometricAuthCompletion) {
         
-        guard try self.isAvailable() else {
-            return false
-        }
+        self.isAvailable(withCompletion: completion)
         
-        if try self.evaluateAuthentication(withReason: reason) {
-            self.save(feature: feature, enable: false)
-            return true
-        } else {
-            return false
-        }
+        self.evaluateAuthentication(withReason: reason, completion: {(result, error) -> Void in
+            if let error = error {
+                completion(false, error)
+            } else {
+                if result {
+                    self.save(feature: feature, enable: false)
+                    completion(true, nil)
+                } else {
+                    completion(false, nil)
+                }
+            }
+        })
     }
     
-    public func requestAuthentication(forFeature feature: String, reason: String) throws -> Bool {
+    public func requestAuthentication(forFeature feature: String, reason: String, completion: BiometricAuthCompletion!) {
         
-        guard try self.isAvailable() else {
-            return false
-        }
+        self.isAvailable(withCompletion: completion)
         
         if (self.isAuthenticationAvailable(forFeature: feature)) {
-            return try self.evaluateAuthentication(withReason: reason)
+            self.evaluateAuthentication(withReason: reason, completion: completion)
         } else {
-            return false
+            completion(false, nil)
         }
     }
     
-    fileprivate func evaluateAuthentication(withReason reason: String) throws -> Bool {
+    fileprivate func evaluateAuthentication(withReason reason: String, completion: BiometricAuthCompletion!) {
         
-        var success : Bool = false
-        var evaluateError : Error?
         self.authenticationContext.evaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics,
                                                   localizedReason: reason,
                                                   reply: { (result, error) in
-                                                    success = result
-                                                    evaluateError = error })
-        if let evaluateError = evaluateError {
-            throw BiometricAuthError.evaluateAuthenticationError(evaluateError.localizedDescription)
-        }
+                                                    if let error = error {
+                                                        completion(false, BiometricAuthError.evaluateAuthenticationError(error.localizedDescription))
+                                                    } else {
+                                                        completion(result, nil)
+                                                    }
+        })
+    }
+    
+    fileprivate func isAvailable(withCompletion completion: BiometricAuthCompletion) {
         
-        return success
+        do {
+            if try !self.isAvailable() {
+                completion(false, nil)
+            }
+        } catch let error as BiometricAuthError {
+            completion(false, error)
+        } catch {
+            completion(false, BiometricAuthError.authenticationNotAvailable("Something went wrong"))
+        }
     }
     
     // MARK: Storage
