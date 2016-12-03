@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "BiometricAuth"
-  s.version      = "0.0.4"
+  s.version      = "1.0.0"
   s.summary      = "Framework for biometric authentication (via TouchID) in your application"
   s.description  = "Framework for biometric authentication (via TouchID) in your application"
   s.homepage     = "https://github.com/vasilenkoigor/BiometricAuth"
