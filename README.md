@@ -115,10 +115,10 @@ do {
 
 ```swift
 self.biometricAuth.requestAuthentication(forFeature: feature, reason: "Reason", completion: { (result, error) in
-            if result {
-                print("Success")
-            }
-        })
+    if result {
+        print("Success")
+    }
+})
 ```
 
 ## License
