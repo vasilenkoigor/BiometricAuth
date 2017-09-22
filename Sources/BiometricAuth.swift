@@ -26,13 +26,13 @@ import LocalAuthentication
 
 extension Dictionary {
     mutating func append(dictionary: Dictionary) {
-        for (key,value) in dictionary {
+        for (key, value) in dictionary {
             self.updateValue(value, forKey:key)
         }
     }
 }
 
-public enum BiometricAuthError : Error {
+public enum BiometricAuthError: Error {
     case evaluateAuthenticationError(String)
     case authenticationNotAvailable(String)
     case domainStateChanged
@@ -48,18 +48,17 @@ public class BiometricAuth {
     
     fileprivate let serviceFeaturesKey = "BiometricAuthFeatures"
     fileprivate let oldDomainStateDefaultsKey = "BiometricAuthOldDomainStateDefaultsKey"
-    fileprivate var forceThrowsOnChangedDomainState : Bool = true
+    fileprivate var forceThrowsOnChangedDomainState: Bool = true
     
     public init(forceThrowsOnChangedDomainState: Bool) {
         self.forceThrowsOnChangedDomainState = forceThrowsOnChangedDomainState
     }
     
     public func isAvailable() throws -> Bool {
-        
         let result = self.authenticationContext.canEvaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics, error: nil)
         
-        if let oldDomainState : Data = UserDefaults.standard.value(forKey: self.oldDomainStateDefaultsKey) as! Data? {
-            if let domainState = self.authenticationContext.evaluatedPolicyDomainState, domainState != oldDomainState  {
+        if let oldDomainState: Data = UserDefaults.standard.value(forKey: self.oldDomainStateDefaultsKey) as? Data {
+            if let domainState = self.authenticationContext.evaluatedPolicyDomainState, domainState != oldDomainState {
                 UserDefaults.standard.set(nil, forKey: self.oldDomainStateDefaultsKey)
                 if self.forceThrowsOnChangedDomainState {
                     throw BiometricAuthError.domainStateChanged
@@ -68,31 +67,27 @@ public class BiometricAuth {
         } else {
             UserDefaults.standard.set(self.authenticationContext.evaluatedPolicyDomainState, forKey: self.oldDomainStateDefaultsKey)
         }
-        
         return result
     }
     
     public func isAuthenticationAvailable(forFeature feature: String) -> Bool {
-        
-        if let featuresStorage: Dictionary<String, Bool> = UserDefaults.standard.value(forKey: self.serviceFeaturesKey) as! Dictionary<String, Bool>? {
-            return featuresStorage[feature]!
+        if let featuresStorage = UserDefaults.standard.value(forKey: self.serviceFeaturesKey) as? [String: Bool],
+            let isAvailable = featuresStorage[feature] {
+            return isAvailable
         } else {
             return false
         }
     }
     
     public func enableAuthentication(forFeature feature: String) throws -> Bool {
-        
         guard try self.isAvailable() else {
             return false
         }
-        
         self.save(feature: feature, enable: true)
         return true
     }
     
     public func disableAuthentication(forFeature feature: String, reason: String, completion: @escaping BiometricAuthCompletion) {
-        
         self.isAvailable(withCompletion: completion)
         
         self.evaluateAuthentication(withReason: reason, completion: {(result, error) -> Void in
@@ -110,10 +105,9 @@ public class BiometricAuth {
     }
     
     public func requestAuthentication(forFeature feature: String, reason: String, completion: BiometricAuthCompletion!) {
-        
         self.isAvailable(withCompletion: completion)
         
-        if (self.isAuthenticationAvailable(forFeature: feature)) {
+        if self.isAuthenticationAvailable(forFeature: feature) {
             self.evaluateAuthentication(withReason: reason, completion: completion)
         } else {
             completion(false, nil)
@@ -121,7 +115,6 @@ public class BiometricAuth {
     }
     
     fileprivate func evaluateAuthentication(withReason reason: String, completion: BiometricAuthCompletion!) {
-        
         self.authenticationContext.evaluatePolicy(LAPolicy.deviceOwnerAuthenticationWithBiometrics,
                                                   localizedReason: reason,
                                                   reply: { (result, error) in
@@ -134,7 +127,6 @@ public class BiometricAuth {
     }
     
     fileprivate func isAvailable(withCompletion completion: BiometricAuthCompletion) {
-        
         do {
             if try !self.isAvailable() {
                 completion(false, nil)
@@ -147,12 +139,10 @@ public class BiometricAuth {
     }
     
     // MARK: Storage
-    
     fileprivate func save(feature: String, enable: Bool) {
-        
         let userDefaults = UserDefaults.standard
-        var featuresStorage = Dictionary<String, Bool>()
-        if let currentStorage: Dictionary<String, Bool> = userDefaults.value(forKey: self.serviceFeaturesKey) as! Dictionary<String, Bool>? {
+        var featuresStorage: [String: Bool] = [:]
+        if let currentStorage = userDefaults.value(forKey: self.serviceFeaturesKey) as? [String: Bool] {
             featuresStorage.append(dictionary: currentStorage)
         }
         featuresStorage[feature] = enable
